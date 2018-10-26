@@ -1,5 +1,23 @@
+@*
+* Play 模板：
+*
+* 模板的第一个扩展名定义了生成的目标代码语言，后一个扩展名定义了被解释的模板语言。一般是 scala.html，表示输入 html 解释成 scala
+* 转换后的结果存放在 target/scala-<version>/twirl 下。然后进一步被编译成 class
+*
+* “@” 符号表示跟随其后的代码为 Scala 语言代码
+*
+*@
+
+@*
+  1) 每个模板都可以理解为一个函数，模板的第一行定义函数的参数，空的 () 表示这个函数没有参数，因此调用格式为 index()
+*@
+
 @()
 
+@*
+  2) 可以继续调用其它模板，相印地模板名就是 object 名，比如调用 main.scala.html，object 名就是 main。这个 main object 接受两个参
+     数。继续参考 main.scala.html 的定义。
+*@
 @main("Welcome to Play") {
-  <h1>Welcome to Play!</h1>
+    <h1>Welcome to Play!</h1>
 }

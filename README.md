@@ -25,9 +25,9 @@ conf：配置目录
     routes：路由器，配置所有接口的地方
     logback.xml: Log 配置文件
 
-project：工程目录，具体作用不明确，新手不关心
+project：工程目录
 
-    plugins.sbt：插件配置文件，可以用来增强安全性等功能
+    plugins.sbt：插件配置文件，可以用来配置插件等。
 
 public：公共资源
 
