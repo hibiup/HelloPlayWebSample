@@ -1,6 +1,6 @@
-# Routes
-# This file defines all application routes (Higher priority routes first)
-# https://www.playframework.com/documentation/latest/ScalaRouting
+#
+# Routes 是路由文件。它实际上也会被转换成 Scala 代码，转换后的路径是 router.routers，存放在 target/scala-<version>/classes 下
+# 和 views, controllers 等并列为顶级包域。
 # ~~~~
 
 # METHOD     URI                    package.to.class.method

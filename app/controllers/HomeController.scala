@@ -15,7 +15,7 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
   /**
     * 1) 请求的转发由 conf/routes 文件定义
     *
-    * 2) Controller 的基本执行单元是 Action，这个函数隐性输入 Request, 返回 Response. Response 以返回码字面符为函数名。
+    * 2) Controller 的基本执行单元是 Action（object），它隐性输入 Request, 返回 Response. Response 以返回码字面符为函数名。
     *
    */
   def index() = Action { implicit request: Request[AnyContent] =>
