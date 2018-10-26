@@ -9,7 +9,7 @@ organization [com.example]: ...
 
 ```
 
-缺省会生成 sbt 和 gradle 混合项目，恶意删除 gradle 配置，然后import 到 intellij，或 Open as Project 的时候选择 build.sbt
+缺省会生成 sbt 和 gradle 混合项目，可以删除 gradle 配置，然后import 到 intellij，或 Open as Project 的时候选择 build.sbt
 
 # 项目结构
 
@@ -38,4 +38,18 @@ public：公共资源
 test：测试目录
 
 build.sbt：项目构建文件
+
+# 项目启动
+
+在项目根目录下执行：
+```
+$ sbt run
+```
+缺省服务端口是 9000
+
+或在 idea 中新建一个 debug configuration，选取 Play 2 App模板，然后执行。
+
+# 项目开发
+
+Idea Ultimate 版本支持 Play framework，社区版不支持。
 
