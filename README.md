@@ -53,3 +53,11 @@ $ sbt run
 
 Idea Ultimate 版本支持 Play framework，社区版不支持。
 
+# 调试
+
+启动项目:
+~~~
+$ sbt run -jvm-debug 9999
+~~~
+
+然后配置 intellij 的 remote, 只需修改端口为 9999, 然后执行即可

@@ -2,11 +2,10 @@ package controllers
 
 // 参考：http://www.voidcn.com/article/p-mmsxwcuu-bqy.html
 
-import akka.actor.ActorSystem
 import javax.inject.Inject
 import play.api.mvc.{AbstractController, ControllerComponents}
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future}
 
 /** 1）在 application.conf 中配置了一个 Akka 线程池，它会被当作缺省的线程池引入。
   *
