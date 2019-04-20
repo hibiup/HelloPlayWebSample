@@ -41,9 +41,9 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
       * */
     override def configure(): Unit = {
         /**
-          * 在 application.conf 中注册以下随机字符串(取16位长即可,用于加密 cookie)
+          * 随机字符串,用于加密 cookie
           * */
-        val sKey = configuration.get[String]("play.http.secret.key").substring(0, 16)      // 取 16 位长
+        val sKey = "rpkTGtoJvLIdsrPd"    // 取 16 位长
         val dataEncrypter = new ShiroAesDataEncrypter(sKey)
         val playSessionStore = new PlayCookieSessionStore(dataEncrypter)
 
@@ -75,7 +75,9 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
     }
 
     /**
-      * 2）重点：重载以下方法以实现安全设置
+      * 2）重点：以下方法智能构造一个配置文件
+      *
+      * @Provides 是 Google Guice 的注释，它可以将一个函数声明为智能构造函数。这个函数的结果是构造出一个 “Config” 实例。
       * */
     @Provides
     def provideConfig(facebookClient: FacebookClient,
@@ -89,7 +91,9 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
                       directBasicAuthClient: DirectBasicAuthClient): Config = {
 
         /**
-          * 设置支持的认证机制
+          * 设置支持的认证机制。
+          *
+          * 参数来自下面的各项 @Provides 实例
           * */
         val clients = new Clients(
             "http://localhost:9000/callback",   /** "/callback" 只用于间接客户端（indirect client 有效）. */
@@ -106,10 +110,11 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
         )
 
         /**
-          * 授权配置
+          * 授权配置实例
           * */
         val config = new Config(clients)
-        /** 添加授权器 */
+
+        /** 为配置实例添加授权器 */
         config.addAuthorizer("admin", new RequireAnyRoleAuthorizer[Nothing]("ROLE_ADMIN"))    //  对 admin 用户授予 ROLE_ADMIN
         config.addAuthorizer("custom", new CustomAuthorizer)
 
@@ -122,9 +127,13 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
           * 设置 HTTP 错误的返回页, 比如 redirections, forbidden, unauthorized 等。
           * */
         config.setHttpActionAdapter(new CustomizedHttpActionAdapter())
+
+        /** 返回配置实例 */
         config
     }
 
+    @Provides
+    def provideTwitterClient: TwitterClient = new TwitterClient("HVSQGAw2XmiwcKOTvZFbQ", "FSiO9G9VRR4KCuksky0kgGuo8gAVndYymr4Nl7qc8AA")
 
     /*@Provides
     def provideFacebookClient: FacebookClient = {
@@ -132,9 +141,6 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
         val fbSecret = configuration.getOptional[String]("fbSecret").get
         new FacebookClient(fbId, fbSecret)
     }*/
-
-    /*@Provides
-    def provideTwitterClient: TwitterClient = new TwitterClient("HVSQGAw2XmiwcKOTvZFbQ", "FSiO9G9VRR4KCuksky0kgGuo8gAVndYymr4Nl7qc8AA")*/
 
     /*@Provides
     def provideFormClient: FormClient = new FormClient(baseUrl + "/loginForm", new SimpleTestUsernamePasswordAuthenticator())*/
