@@ -33,7 +33,7 @@ import security.{CustomAuthorizer, CustomizedHttpActionAdapter}
   *
   *   play.modules.enabled += "modules.SecurityModule"
   *
-  * SecurityModule 基于 Guice 的 AbstractModule 来实现自动注入
+  * SecurityModule 基于 Guice 的 AbstractModule 来实现自动注入, 它相当于 Spring Boot 的 @Configuration
   */
 class SecurityModule(environment: Environment, configuration: Configuration) extends AbstractModule {
     /**
@@ -75,9 +75,10 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
     }
 
     /**
-      * 2）重点：以下方法智能构造一个配置文件
+      * 2）重点：以下方法智能构造一个配置（Config）实例
       *
-      * @Provides 是 Google Guice 的注释，它可以将一个函数声明为智能构造函数。这个函数的结果是构造出一个 “Config” 实例。
+      * "@Provides" 是 Google Guice 的注释，相当于 Spring Boot 的 "@Bean" 它可以将一个函数声明为智能构造函数。这个函数的结果
+      * 是构造出一个 “Config” 实例。
       * */
     @Provides
     def provideConfig(facebookClient: FacebookClient,
@@ -91,9 +92,17 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
                       directBasicAuthClient: DirectBasicAuthClient): Config = {
 
         /**
-          * 设置支持的认证机制。
+          * 2-1) 设置支持的认证机制(Client)，支持的认证机制包括：
           *
-          * 参数来自下面的各项 @Provides 实例
+          *    OAuth，SAML，CAS，OpenID Connect，HTTP，OpenID，Google App Engine，Kerberos (SPNEGO)
+          *
+          *  其中 HTTP client 通过实现 Authenticator 接口来实现：
+          *
+          *    LDAP，SQL，JWT，MongoDB，CouchDB，IP address，REST API
+          *
+          *  Authenticator 只有一个方法：validate(C credentials, WebContext context)
+          *
+          *  认证机制通过一个总的 Clients 注册，然后作为 Config 的构造参数传入系统。以下 Clients 的参数来自下面的各项 @Provides 实例。
           * */
         val clients = new Clients(
             "http://localhost:9000/callback",   /** "/callback" 只用于间接客户端（indirect client 有效）. */
@@ -110,7 +119,7 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
         )
 
         /**
-          * 授权配置实例
+          * 2-2) 授权(Authorizer )配置实例
           * */
         val config = new Config(clients)
 
@@ -119,21 +128,27 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
         config.addAuthorizer("custom", new CustomAuthorizer)
 
         /**
-          * 添加 URL 映射
+          * 2-3) 添加 URL 映射
           * */
         config.addMatcher("excludedPath", new PathMatcher().excludeRegex("^/facebook/notprotected\\.html$"))   // 将该URL排除在外
 
         /**
-          * 设置 HTTP 错误的返回页, 比如 redirections, forbidden, unauthorized 等。
+          * 2-4 Option)设置 HTTP 错误的返回页, 比如 redirections, forbidden, unauthorized 等。
           * */
         config.setHttpActionAdapter(new CustomizedHttpActionAdapter())
 
-        /** 返回配置实例 */
+        /** 2-5) 返回配置实例 */
         config
     }
 
+    /**
+      * 认证（Authentication）
+      * */
     @Provides
     def provideTwitterClient: TwitterClient = new TwitterClient("HVSQGAw2XmiwcKOTvZFbQ", "FSiO9G9VRR4KCuksky0kgGuo8gAVndYymr4Nl7qc8AA")
+
+    @Provides
+    def provideDirectBasicAuthClient: DirectBasicAuthClient = new DirectBasicAuthClient(new SimpleTestUsernamePasswordAuthenticator)
 
     /*@Provides
     def provideFacebookClient: FacebookClient = {
@@ -143,7 +158,7 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
     }*/
 
     /*@Provides
-    def provideFormClient: FormClient = new FormClient(baseUrl + "/loginForm", new SimpleTestUsernamePasswordAuthenticator())*/
+    def provideFormClient: FormClient = new FormClient(baseUrl + "/loginForm", new SimpleTestUernamePasswordAuthenticator())*/
 
     /*@Provides
     def provideIndirectBasicAuthClient: IndirectBasicAuthClient = new IndirectBasicAuthClient(new SimpleTestUsernamePasswordAuthenticator())*/
@@ -190,7 +205,4 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
         parameterClient.setSupportPostRequest(false)
         parameterClient
     }*/
-
-    /*@Provides
-    def provideDirectBasicAuthClient: DirectBasicAuthClient = new DirectBasicAuthClient(new SimpleTestUsernamePasswordAuthenticator)*/
 }
