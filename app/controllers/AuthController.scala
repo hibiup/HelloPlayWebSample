@@ -2,9 +2,12 @@ package controllers
 
 import javax.inject.Inject
 import org.pac4j.core.context.Pac4jConstants
-import org.pac4j.core.profile.CommonProfile
+import org.pac4j.core.profile.{CommonProfile, ProfileManager}
 import org.pac4j.play.PlayWebContext
 import org.pac4j.play.scala.{Security, SecurityComponents}
+import play.api.mvc.RequestHeader
+
+import scala.collection.JavaConverters.asScalaBuffer
 
 //@Singleton
 class AuthController @Inject() (val controllerComponents: SecurityComponents) extends Security[CommonProfile]{
@@ -21,7 +24,7 @@ class AuthController @Inject() (val controllerComponents: SecurityComponents) ex
       *
       * 第二个参数(可选)是授权比对机制（多选），授权器（Authorizer）需要在 SecurityModule 中注册
       *
-      * 第三个参数是 matchers。
+      * 第三个参数是 matchers, 用于将该 URL 之下的某个子 URL 排除在认证之外（无需认证）。
       *
       * */
     def index = Secure(clients = "DirectBasicAuthClient", authorizers = "admin_authorizer") { implicit request =>
@@ -32,12 +35,13 @@ class AuthController @Inject() (val controllerComponents: SecurityComponents) ex
     }
 
     /**
-      * 除此之外，Secure可以不提供任何参数，而使用 HttpFilters 来实现安全配置。下面这个资源的访问控制，参见 CustomHttpFilter 中的说明.
+      * 除此之外，还可以使用 HttpFilters 来实现安全配置。下面这个资源的访问控制，参见 CustomHttpFilter 中的说明.
       * */
-    def admin = Secure() {  implicit request =>
+    def admin = /*Secure()*/ Action {  implicit request =>
         val webContext = new PlayWebContext(request, controllerComponents.playSessionStore)
         val sessionId = playSessionStore.getOrCreateSessionId(webContext)
         val csrfToken = playSessionStore.get(webContext, Pac4jConstants.CSRF_TOKEN).asInstanceOf[String]
-        Ok(views.html.auth(request.profiles, csrfToken, sessionId))
+        val profiles: List[CommonProfile]  = asScalaBuffer(new ProfileManager[CommonProfile](webContext).getAll(true)).toList
+        Ok(views.html.auth(profiles, csrfToken, sessionId))
     }
 }
