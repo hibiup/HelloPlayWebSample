@@ -12,6 +12,7 @@ GET     /akka                       controllers.AkkaController.akkaAsync
 
 # pac4j authentication
 GET     /auth                       controllers.AuthController.index
+GET     /admin/auth                 controllers.AuthController.admin
 
 GET         /callback                                @org.pac4j.play.CallbackController.callback()
 POST        /callback                                @org.pac4j.play.CallbackController.callback()

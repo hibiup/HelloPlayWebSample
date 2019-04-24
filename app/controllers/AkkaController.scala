@@ -1,7 +1,7 @@
 package controllers
 
 import akka.actor.ActorSystem
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import play.api.mvc.{AbstractController, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -9,6 +9,7 @@ import scala.concurrent.duration._
 
 
 /** 1) Play 集成了 Akka, 因此可以直接注入使用 */
+@Singleton
 class AkkaController @Inject()(cc: ControllerComponents, actorSystem: ActorSystem)
                               (implicit ec: ExecutionContext) // 无论是缺省的还是定制的都能被隐式捕获
   extends AbstractController(cc) {

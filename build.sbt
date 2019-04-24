@@ -30,7 +30,8 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala).settings(
         "org.pac4j" % "pac4j-couch" % pac4jVersion,
         "org.apache.shiro" % "shiro-core" % "1.4.0",
         "com.typesafe.play" % "play-cache_2.12" % playVersion,
-        "commons-io" % "commons-io" % "2.5"
+        "commons-io" % "commons-io" % "2.5",
+        "org.apache.commons" % "commons-lang3" % "3.9"
     )
 )
 

@@ -2,7 +2,7 @@ package controllers
 
 // 参考：http://www.voidcn.com/article/p-mmsxwcuu-bqy.html
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import play.api.mvc.{AbstractController, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -13,6 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
   *   class MyExecutionContext @Inject()(actorSystem: ActorSystem) extends CustomExecutionContext(actorSystem, "my-context")
   *
   * */
+@Singleton
 class AsyncController @Inject()(cc: ControllerComponents)
                                (implicit ec: ExecutionContext) // 无论是缺省的还是定制的都能被隐式捕获
                                extends AbstractController(cc) {

@@ -26,7 +26,7 @@ import org.pac4j.oidc.profile.OidcProfile
 import org.pac4j.play.scala.{DefaultSecurityComponents, Pac4jScalaTemplateHelper, SecurityComponents}
 import org.pac4j.saml.client.SAML2Client
 import org.pac4j.saml.config.SAML2Configuration
-import security.{CustomAuthorizer, CustomizedHttpActionAdapter}
+import security.{CustomAuthorizer, CustomizedHttpActionAdapter, UsernamePasswordAuthenticator}
 
 /**
   * SecurityModule 是 play 负责安全的模块，通过在 application.conf 中注册来引入：
@@ -41,34 +41,50 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
       * */
     override def configure(): Unit = {
         /**
-          * 随机字符串,用于加密 cookie
+          * 1-1) 需要为 pac4j 指定一个 SessionStore, 可以使用 Redis 或其他实现，缺省选用 PlayCookieSessionStore，为此需要设置一个随机字符串,
+          * 用于加密 cookie.
           * */
         val sKey = "rpkTGtoJvLIdsrPd"    // 取 16 位长
         val dataEncrypter = new ShiroAesDataEncrypter(sKey)
         val playSessionStore = new PlayCookieSessionStore(dataEncrypter)
+        bind(classOf[PlaySessionStore]).toInstance(playSessionStore)
 
-        bind(classOf[PlaySessionStore]).toInstance(playSessionStore)                // 配置存储 Session 的存储器
-        bind(classOf[SecurityComponents]).to(classOf[DefaultSecurityComponents])    // 配置缺省的 SecurityComponents 实例,会被传给 controller
-        bind(classOf[Pac4jScalaTemplateHelper[CommonProfile]])                      // 注册登陆用户的 Profile 格式, 这个 profile 会被传递给 ProfileAuthorizer
-
-        // callback
         /**
-          * 为 indirect client 配置回调页面，要在 route 中注册缺省的 CallbackController
+          * 1-2) 认证通过后，可以将包括 SessionStore，Akka ExecuteContext, matcher, clients, authorizor 等等许多上下文信息
+          * 通过 SecurityComponents 传递给 controller（也可以不传）。
           *
-          * GET         /callback                                @org.pac4j.play.CallbackController.callback()
-          * POST        /callback                                @org.pac4j.play.CallbackController.callback()
+          * 这里缺省使用 DefaultSecurityComponents 作为上下文容器。
           * */
+        bind(classOf[SecurityComponents]).to(classOf[DefaultSecurityComponents])
+
+        /**
+          * 1-3) 用户通过认证后需要一个 Profile 来存放认证信息，这个 profile 会被传递给 ProfileAuthorizer。
+          * 缺省指定 CommonProfile 作为模版。
+          * */
+        bind(classOf[Pac4jScalaTemplateHelper[CommonProfile]])
+
+        /**
+          * 1-4) 需要配置两个 endpoint。 其中一个为 indirect client 认证通过后的回调地址. 这个地址用来存放用户的认证状态。
+          *
+          * 同时要在 route 中注册:
+          *   GET         /callback                                @org.pac4j.play.CallbackController.callback()
+          *   POST        /callback                                @org.pac4j.play.CallbackController.callback()
+          * */
+        // callback
         val callbackController = new CallbackController()
-        callbackController.setDefaultUrl("/?defaulturlafterlogout")     // indirect client 登出后的缺省 URL
+        // indirect client 认证后的缺省回调 URL。可选，如果没设置则返回之前的页面。
+        callbackController.setDefaultUrl("/?defaultUrlAfterOauthSignIn")
+        // 支持多个 OAuth 身份
         callbackController.setMultiProfile(true)
         bind(classOf[CallbackController]).toInstance(callbackController)
 
-        // logout
         /**
-          * 为 direct client 配置 logout 服务, 要在 route 中注册:
+          * 1-5) 第二个 endpoint 为 logout 服务地址（可选）
           *
-          * GET         /logout                                  @org.pac4j.play.LogoutController.logout()
+          * 同时要在 route 中注册:
+          *   GET         /logout                                  @org.pac4j.play.LogoutController.logout()
           * */
+        // logout
         val logoutController = new LogoutController()
         logoutController.setDefaultUrl("/byebye")    // 登出后返回的缺省 URL。（这里定义返回 /，并给予 “byebye” 参数）
         bind(classOf[LogoutController]).toInstance(logoutController)
@@ -92,7 +108,7 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
                       directBasicAuthClient: DirectBasicAuthClient): Config = {
 
         /**
-          * 2-1) 设置支持的认证机制(Client)，支持的认证机制包括：
+          * 2-1) 设置支持的认证机制(Client)，支持的认证机制包括(并非需要全部)：
           *
           *    OAuth，SAML，CAS，OpenID Connect，HTTP，OpenID，Google App Engine，Kerberos (SPNEGO)
           *
@@ -119,21 +135,33 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
         )
 
         /**
-          * 2-2) 授权(Authorizer )配置实例
+          * 2-2) 根据认证机制 (Client) 生成 Config。
+          *
+          * 在 Controller 中为某个 URL 配置 Secure Annotation, 并指定 Client 来实现对单个 URL 的认证和授权。（参见 AuthController）
           * */
         val config = new Config(clients)
 
-        /** 为配置实例添加授权器 */
-        config.addAuthorizer("admin", new RequireAnyRoleAuthorizer[Nothing]("ROLE_ADMIN"))    //  对 admin 用户授予 ROLE_ADMIN
-        config.addAuthorizer("custom", new CustomAuthorizer)
-
         /**
-          * 2-3) 添加 URL 映射
+          * 2-3）Client 只实现了认证，还需要通过 Authorizer 对 URL 做授权比对(可选)。（参见 security/CustomHttpFilters）
+          *
+          * 如果不设置 Authorizer,则任何通过认证的用户都可以访问该资源。
+          *
+          * 授权器的第一个参数是授权器的名称，由 application.conf 的 pac4j.security.rules 配置项根据资源来选择使用哪个授权器，
+          * 第二个参数设置访问该资源需要的权限。可以添加多个授权器。
           * */
-        config.addMatcher("excludedPath", new PathMatcher().excludeRegex("^/facebook/notprotected\\.html$"))   // 将该URL排除在外
+        config.addAuthorizer("admin_authorizer", new RequireAnyRoleAuthorizer("ROLE_ADMIN"))    // 检查通过认证的用户是否具有 ROLE_ADMIN 授予
+        config.addAuthorizer("custom_authorizer", new CustomAuthorizer)
 
         /**
-          * 2-4 Option)设置 HTTP 错误的返回页, 比如 redirections, forbidden, unauthorized 等。
+          * 2-4) Matcher 用于将特定的 URL 映射 “排除” 在认证之外（允许 public 访问）
+          *
+          * 有三类 Matcher 可选：PathMatcher, HeaderMatcher, HttpMethodMatcher
+          * */
+        val matcher = new PathMatcher().excludeRegex("^/public\\.html$")     // 可以连续调用多个 exclude...() 方法
+        config.addMatcher("excludedPath", matcher)
+
+        /**
+          * 2-4 Option) 设置 HTTP 错误的返回页, 比如 redirections, forbidden, unauthorized 等。
           * */
         config.setHttpActionAdapter(new CustomizedHttpActionAdapter())
 
@@ -142,13 +170,15 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
     }
 
     /**
-      * 认证（Authentication）
+      * 认证（Authentication）器：
+      *
+      * 1-1) HTTP Basic Authentication
       * */
     @Provides
-    def provideTwitterClient: TwitterClient = new TwitterClient("HVSQGAw2XmiwcKOTvZFbQ", "FSiO9G9VRR4KCuksky0kgGuo8gAVndYymr4Nl7qc8AA")
+    def directBasicAuthClient: DirectBasicAuthClient = new DirectBasicAuthClient(new UsernamePasswordAuthenticator)
 
     @Provides
-    def provideDirectBasicAuthClient: DirectBasicAuthClient = new DirectBasicAuthClient(new SimpleTestUsernamePasswordAuthenticator)
+    def twitterClient: TwitterClient = new TwitterClient("HVSQGAw2XmiwcKOTvZFbQ", "FSiO9G9VRR4KCuksky0kgGuo8gAVndYymr4Nl7qc8AA")
 
     /*@Provides
     def provideFacebookClient: FacebookClient = {
