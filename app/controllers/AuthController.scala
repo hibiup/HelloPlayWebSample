@@ -36,6 +36,8 @@ class AuthController @Inject() (val controllerComponents: SecurityComponents) ex
 
     /**
       * 除此之外，还可以使用 HttpFilters 来实现安全配置。下面这个资源的访问控制，参见 CustomHttpFilter 中的说明.
+      *
+      * 更多的安全配置选项参考：https://github.com/pac4j/play-pac4j-scala-demo/blob/master/app/controllers/Application.scala
       * */
     def admin = /*Secure()*/ Action {  implicit request =>
         val webContext = new PlayWebContext(request, controllerComponents.playSessionStore)
