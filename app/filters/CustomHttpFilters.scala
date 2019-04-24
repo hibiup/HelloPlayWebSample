@@ -20,6 +20,7 @@ import play.api.mvc.EssentialFilter
   *
   *    pac4j.security.rules = ...
   *
+  * 参见 application.conf 中的详细配置
   *
   * （除此之外，还可以通过 Secure 来直接控制 Controller 的安全配置，参见 AuthController 的说明）
   * */
