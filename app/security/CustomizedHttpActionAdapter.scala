@@ -15,7 +15,9 @@ class CustomizedHttpActionAdapter extends PlayHttpActionAdapter {
             Results.unauthorized(views.html.error401.render().toString()).as(HttpConstants.HTML_CONTENT_TYPE)
         } else if (code == HttpConstants.FORBIDDEN) {
             Results.forbidden(views.html.error403.render().toString()).as(HttpConstants.HTML_CONTENT_TYPE)
-        } else {
+        } /*else if (code == 500) {
+            Results.forbidden(views.html.error500.render().toString()).as(HttpConstants.HTML_CONTENT_TYPE)
+        }*/ else {
             super.adapt(code, context)
         }
     }

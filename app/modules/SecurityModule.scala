@@ -2,25 +2,20 @@ package modules
 
 import com.google.inject.{AbstractModule, Provides}
 import org.pac4j.cas.client.{CasClient, CasProxyReceptor}
-import org.pac4j.core.client.Clients
+import org.pac4j.core.client.{BaseClient, Clients}
 import org.pac4j.http.client.direct.{DirectBasicAuthClient, ParameterClient}
 import org.pac4j.http.client.indirect.{FormClient, IndirectBasicAuthClient}
-import org.pac4j.http.credentials.authenticator.test.SimpleTestUsernamePasswordAuthenticator
 import org.pac4j.jwt.credentials.authenticator.JwtAuthenticator
 import org.pac4j.oauth.client.{FacebookClient, TwitterClient}
 import org.pac4j.oidc.client.OidcClient
 import org.pac4j.play.{CallbackController, LogoutController}
 import play.api.{Configuration, Environment}
-import java.io.File
-
-import org.pac4j.cas.config.{CasConfiguration, CasProtocol}
-import org.pac4j.play.store.{PlayCacheSessionStore, PlayCookieSessionStore, PlaySessionStore, ShiroAesDataEncrypter}
+import org.pac4j.play.store.{PlayCookieSessionStore, PlaySessionStore, ShiroAesDataEncrypter}
 import org.pac4j.core.authorization.authorizer.RequireAnyRoleAuthorizer
 import org.pac4j.core.client.direct.AnonymousClient
 import org.pac4j.core.config.Config
 import org.pac4j.core.matching.PathMatcher
 import org.pac4j.core.profile.CommonProfile
-import org.pac4j.jwt.config.signature.SecretSignatureConfiguration
 import org.pac4j.oidc.config.OidcConfiguration
 import org.pac4j.oidc.profile.OidcProfile
 import org.pac4j.play.scala.{DefaultSecurityComponents, Pac4jScalaTemplateHelper, SecurityComponents}
@@ -65,15 +60,12 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
 
         /**
           * 1-4) 需要配置两个 endpoint。 其中一个为 indirect client 认证通过后的回调地址. 这个地址用来存放用户的认证状态。
-          *
-          * 同时要在 route 中注册:
-          *   GET         /callback                                @org.pac4j.play.CallbackController.callback()
-          *   POST        /callback                                @org.pac4j.play.CallbackController.callback()
+          *      参见 FormClient 的说明。
           * */
         // callback
         val callbackController = new CallbackController()
         // indirect client 认证后的缺省回调 URL。可选，如果没设置则返回之前的页面。
-        callbackController.setDefaultUrl("/?defaultUrlAfterOauthSignIn")
+        callbackController.setDefaultUrl("/?afterlogin")
         // 支持多个 OAuth 身份
         callbackController.setMultiProfile(true)
         bind(classOf[CallbackController]).toInstance(callbackController)
@@ -86,7 +78,7 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
           * */
         // logout
         val logoutController = new LogoutController()
-        logoutController.setDefaultUrl("/byebye")    // 登出后返回的缺省 URL。（这里定义返回 /，并给予 “byebye” 参数）
+        logoutController.setDefaultUrl("/loginForm")    // 登出后返回的缺省 URL。（这里定义返回 /，并给予 “byebye” 参数）
         bind(classOf[LogoutController]).toInstance(logoutController)
     }
 
@@ -119,18 +111,20 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
           *  Authenticator 只有一个方法：validate(C credentials, WebContext context)
           *
           *  认证机制通过一个总的 Clients 注册，然后作为 Config 的构造参数传入系统。以下 Clients 的参数来自下面的各项 @Provides 实例。
+          *
+          *  第一个参数是 indirect client 的回调地址，参考 FormClient 的说明
           * */
         val clients = new Clients(
-            "http://localhost:9000/callback",   /** "/callback" 只用于间接客户端（indirect client 有效）. */
-            facebookClient,
-            twitterClient,
+            "/login",
+            directBasicAuthClient,
             formClient,
-            indirectBasicAuthClient,
+            /*facebookClient,
+            twitterClient,
             casClient,
             saml2Client,
             oidcClient,
-            parameterClient,
-            directBasicAuthClient,
+            parameterClient,*/
+            //indirectBasicAuthClient,
             new AnonymousClient()
         )
 
@@ -172,13 +166,28 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
     /**
       * 认证（Authentication）器：
       *
-      * 1-1) HTTP Basic Authentication
+      * HTTP Basic Authentication
       * */
     @Provides
     def directBasicAuthClient: DirectBasicAuthClient = new DirectBasicAuthClient(new UsernamePasswordAuthenticator)
 
+    /**
+      * 表格登录（FormClient）：
+      *
+      * 表格登录需要一个 callback 地址，这个 callback 是登录表单的提交（POST）地址，会在 AuthController.loginForm 中被读取，
+      * 然后赋给登录表单。需要在 Clients 中登记，并注册到 route 中：
+      *
+      *   GET     /login                   @org.pac4j.play.CallbackController.callback()
+      *   POST    /login                   @org.pac4j.play.CallbackController.callback()
+      * */
     @Provides
-    def twitterClient: TwitterClient = new TwitterClient("HVSQGAw2XmiwcKOTvZFbQ", "FSiO9G9VRR4KCuksky0kgGuo8gAVndYymr4Nl7qc8AA")
+    def formClient: FormClient = new FormClient("/loginForm", new UsernamePasswordAuthenticator())
+
+    /*@Provides
+    def indirectBasicAuthClient: IndirectBasicAuthClient = new IndirectBasicAuthClient(new UsernamePasswordAuthenticator())*/
+
+    /*@Provides
+    def twitterClient: TwitterClient = new TwitterClient("HVSQGAw2XmiwcKOTvZFbQ", "FSiO9G9VRR4KCuksky0kgGuo8gAVndYymr4Nl7qc8AA")*/
 
     /*@Provides
     def provideFacebookClient: FacebookClient = {
@@ -186,12 +195,6 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
         val fbSecret = configuration.getOptional[String]("fbSecret").get
         new FacebookClient(fbId, fbSecret)
     }*/
-
-    /*@Provides
-    def provideFormClient: FormClient = new FormClient(baseUrl + "/loginForm", new SimpleTestUernamePasswordAuthenticator())*/
-
-    /*@Provides
-    def provideIndirectBasicAuthClient: IndirectBasicAuthClient = new IndirectBasicAuthClient(new SimpleTestUsernamePasswordAuthenticator())*/
 
     /*@Provides
     def provideCasProxyReceptor: CasProxyReceptor = new CasProxyReceptor()*/

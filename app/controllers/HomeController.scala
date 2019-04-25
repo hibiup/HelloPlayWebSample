@@ -38,4 +38,9 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
       .withHeaders("Foo" -> "bar")
       .withSession("SessionFoo" -> "The-value")
   }
+
+  /** 模拟错误 */
+  def error500 = Action { implicit request =>
+    throw new RuntimeException("Something...")
+  }
 }

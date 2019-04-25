@@ -3,9 +3,9 @@ package controllers
 import javax.inject.Inject
 import org.pac4j.core.context.Pac4jConstants
 import org.pac4j.core.profile.{CommonProfile, ProfileManager}
+import org.pac4j.http.client.indirect.FormClient
 import org.pac4j.play.PlayWebContext
 import org.pac4j.play.scala.{Security, SecurityComponents}
-import play.api.mvc.RequestHeader
 
 import scala.collection.JavaConverters.asScalaBuffer
 
@@ -27,7 +27,7 @@ class AuthController @Inject() (val controllerComponents: SecurityComponents) ex
       * 第三个参数是 matchers, 用于将该 URL 之下的某个子 URL 排除在认证之外（无需认证）。
       *
       * */
-    def index = Secure(clients = "DirectBasicAuthClient", authorizers = "admin_authorizer") { implicit request =>
+    def index = Secure(clients = "FormClient,DirectBasicAuthClient", authorizers = "admin_authorizer") { implicit request =>
         val webContext = new PlayWebContext(request, controllerComponents.playSessionStore)
         val sessionId = playSessionStore.getOrCreateSessionId(webContext)
         val csrfToken = playSessionStore.get(webContext, Pac4jConstants.CSRF_TOKEN).asInstanceOf[String]
@@ -39,11 +39,19 @@ class AuthController @Inject() (val controllerComponents: SecurityComponents) ex
       *
       * 更多的安全配置选项参考：https://github.com/pac4j/play-pac4j-scala-demo/blob/master/app/controllers/Application.scala
       * */
-    def admin = /*Secure()*/ Action {  implicit request =>
+    def admin = Action {  implicit request =>
         val webContext = new PlayWebContext(request, controllerComponents.playSessionStore)
         val sessionId = playSessionStore.getOrCreateSessionId(webContext)
         val csrfToken = playSessionStore.get(webContext, Pac4jConstants.CSRF_TOKEN).asInstanceOf[String]
         val profiles: List[CommonProfile]  = asScalaBuffer(new ProfileManager[CommonProfile](webContext).getAll(true)).toList
         Ok(views.html.auth(profiles, csrfToken, sessionId))
+    }
+
+    /**
+      * 支持表格登录(FormClient)的 URL
+      * */
+    def loginForm = Action { request =>
+        val formClient = config.getClients.findClient("FormClient").asInstanceOf[FormClient]
+        Ok(views.html.loginForm.render(formClient.getCallbackUrl))    // formClient.getCallbackUrl 获得 Clients 的第一个参数值
     }
 }
