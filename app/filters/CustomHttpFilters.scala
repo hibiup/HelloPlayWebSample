@@ -7,7 +7,7 @@ import play.api.mvc.EssentialFilter
 
 
 /**
-  * 安全选项二：
+  * 安全配置二：
   *
   * HttpFilters 是 play 的过滤器，它用于过滤所有的请求（https://www.playframework.com/documentation/2.7.x/ScalaHttpFilters）。
   * 通过在 application.conf 中注册让 Play framework 在启动的时候自动载入：

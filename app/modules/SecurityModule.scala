@@ -3,7 +3,7 @@ package modules
 import com.google.inject.{AbstractModule, Provides}
 import org.pac4j.cas.client.{CasClient, CasProxyReceptor}
 import org.pac4j.core.client.{BaseClient, Clients}
-import org.pac4j.http.client.direct.{DirectBasicAuthClient, ParameterClient}
+import org.pac4j.http.client.direct.{DirectBasicAuthClient, HeaderClient, ParameterClient}
 import org.pac4j.http.client.indirect.{FormClient, IndirectBasicAuthClient}
 import org.pac4j.jwt.credentials.authenticator.JwtAuthenticator
 import org.pac4j.oauth.client.{FacebookClient, TwitterClient}
@@ -16,6 +16,7 @@ import org.pac4j.core.client.direct.AnonymousClient
 import org.pac4j.core.config.Config
 import org.pac4j.core.matching.PathMatcher
 import org.pac4j.core.profile.CommonProfile
+import org.pac4j.jwt.config.signature.SecretSignatureConfiguration
 import org.pac4j.oidc.config.OidcConfiguration
 import org.pac4j.oidc.profile.OidcProfile
 import org.pac4j.play.scala.{DefaultSecurityComponents, Pac4jScalaTemplateHelper, SecurityComponents}
@@ -30,7 +31,7 @@ import security.{CustomAuthorizer, CustomizedHttpActionAdapter, UsernamePassword
   *
   * SecurityModule 基于 Guice 的 AbstractModule 来实现自动注入, 它相当于 Spring Boot 的 @Configuration
   */
-class SecurityModule(environment: Environment, configuration: Configuration) extends AbstractModule {
+class SecurityModule(environment: Environment, appConf: Configuration) extends AbstractModule {
     /**
       * 1）初始化 SecurityModule 的配置
       * */
@@ -93,10 +94,11 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
                       twitterClient: TwitterClient,
                       formClient: FormClient,
                       indirectBasicAuthClient: IndirectBasicAuthClient,
+                      parameterClient: ParameterClient,
+                      headerClient: HeaderClient,
                       casClient: CasClient,
                       saml2Client: SAML2Client,
                       oidcClient: OidcClient[OidcProfile, OidcConfiguration],
-                      parameterClient: ParameterClient,
                       directBasicAuthClient: DirectBasicAuthClient): Config = {
 
         /**
@@ -118,13 +120,14 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
             "/login",
             directBasicAuthClient,
             formClient,
-            /*facebookClient,
+            //indirectBasicAuthClient,
+            headerClient,
+            /*
+            facebookClient,
             twitterClient,
             casClient,
             saml2Client,
-            oidcClient,
-            parameterClient,*/
-            //indirectBasicAuthClient,
+            oidcClient,*/
             new AnonymousClient()
         )
 
@@ -186,6 +189,33 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
     /*@Provides
     def indirectBasicAuthClient: IndirectBasicAuthClient = new IndirectBasicAuthClient(new UsernamePasswordAuthenticator())*/
 
+    /**
+      * HeaderClient 或 ParameterClient 机制允许我们通过 Header 或 URL 参数传递认证信息。如果是 HeaderClient，指定 Header 名称
+      * ParameterClient 则指定参数名称。
+      * */
+    @Provides
+    def headerClient: HeaderClient = {
+        // jwtAuthenticator 接受两个参数，第一个是 SignatureConfiguration，第二个是可选的 EncryptionConfiguration，详见：
+        //   http://www.pac4j.org/docs/authenticators/jwt.html
+        val jwtAuthenticator = new JwtAuthenticator(new SecretSignatureConfiguration(appConf.get[String]("pac4j.security.jwt_secret")))
+
+        // ParameterClient 的实现(假设参数名称是 "token" )：
+        /*
+         *   val client = new ParameterClient("token", jwtAuthenticator)
+         *   client.setSupportGetRequest(true)
+         *   client.setSupportPostRequest(false)
+         * */
+
+        // HeaderClient 的实现：
+        /*
+         * 从 jwt token URL 获得 jwt token 后，将它存放在 HTTP Header 中提交到该 URL:
+         *
+         * Http header:
+         *   Authorization: Barear eyJhbGciOiJIUzI1NiJ9....
+         */
+        new HeaderClient("Authorization", "Barear ", jwtAuthenticator)
+    }
+
     /*@Provides
     def twitterClient: TwitterClient = new TwitterClient("HVSQGAw2XmiwcKOTvZFbQ", "FSiO9G9VRR4KCuksky0kgGuo8gAVndYymr4Nl7qc8AA")*/
 
@@ -227,15 +257,5 @@ class SecurityModule(environment: Environment, configuration: Configuration) ext
         val oidcClient = new OidcClient[OidcProfile, OidcConfiguration](oidcConfiguration)
         oidcClient.addAuthorizationGenerator(new RoleAdminAuthGenerator)
         oidcClient
-    }*/
-
-    /*@Provides
-    def provideParameterClient: ParameterClient = {
-        val jwtAuthenticator = new JwtAuthenticator()
-        jwtAuthenticator.addSignatureConfiguration(new SecretSignatureConfiguration("12345678901234567890123456789012"))
-        val parameterClient = new ParameterClient("token", jwtAuthenticator)
-        parameterClient.setSupportGetRequest(true)
-        parameterClient.setSupportPostRequest(false)
-        parameterClient
     }*/
 }
