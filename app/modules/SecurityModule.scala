@@ -120,7 +120,6 @@ class SecurityModule(environment: Environment, appConf: Configuration) extends A
             "/login",
             directBasicAuthClient,
             formClient,
-            //indirectBasicAuthClient,
             headerClient,
             /*
             facebookClient,
@@ -128,6 +127,7 @@ class SecurityModule(environment: Environment, appConf: Configuration) extends A
             casClient,
             saml2Client,
             oidcClient,*/
+            //indirectBasicAuthClient,
             new AnonymousClient()
         )
 
@@ -139,7 +139,7 @@ class SecurityModule(environment: Environment, appConf: Configuration) extends A
         val config = new Config(clients)
 
         /**
-          * 2-3）Client 只实现了认证，还需要通过 Authorizer 对 URL 做授权比对(可选)。（参见 security/CustomHttpFilters）
+          * 2-3）Client 只实现了认证机制，还需要通过 Authorizer 对 URL 做授权比对(可选)。（参见 security/CustomHttpFilters）
           *
           * 如果不设置 Authorizer,则任何通过认证的用户都可以访问该资源。
           *
@@ -166,16 +166,16 @@ class SecurityModule(environment: Environment, appConf: Configuration) extends A
         config
     }
 
-    /**
-      * 认证（Authentication）器：
+    /*****************************************
+      * 认证机制：
       *
-      * HTTP Basic Authentication
+      * (*) HTTP Basic Authentication 机制：
       * */
     @Provides
     def directBasicAuthClient: DirectBasicAuthClient = new DirectBasicAuthClient(new UsernamePasswordAuthenticator)
 
     /**
-      * 表格登录（FormClient）：
+      * (*) FormClient 机制：
       *
       * 表格登录需要一个 callback 地址，这个 callback 是登录表单的提交（POST）地址，会在 AuthController.loginForm 中被读取，
       * 然后赋给登录表单。需要在 Clients 中登记，并注册到 route 中：
@@ -190,8 +190,11 @@ class SecurityModule(environment: Environment, appConf: Configuration) extends A
     def indirectBasicAuthClient: IndirectBasicAuthClient = new IndirectBasicAuthClient(new UsernamePasswordAuthenticator())*/
 
     /**
-      * HeaderClient 或 ParameterClient 机制允许我们通过 Header 或 URL 参数传递认证信息。如果是 HeaderClient，指定 Header 名称
+      * (*) HeaderClient 或 ParameterClient 机制允许我们通过 Header 或 URL 参数传递认证信息(比如 jwt token。jwt 本身不是一个独立
+      * 的认证机制，它依托于 HeaderClient 或 ParameterClient 机制)。如果是 HeaderClient，通过 Header 名称指定认证信息，
       * ParameterClient 则指定参数名称。
+      *
+      * （jwt token 的生成参见 AuthController.jwtGenerate 方法）
       * */
     @Provides
     def headerClient: HeaderClient = {
