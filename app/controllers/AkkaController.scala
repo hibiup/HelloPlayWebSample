@@ -25,7 +25,7 @@ class AkkaController @Inject()(cc: ControllerComponents, actorSystem: ActorSyste
 
     // 通过 ActionSystem 分发
     actorSystem.scheduler.scheduleOnce(delayTime) {
-      // 定义 promise
+      // 定义 promise (Runnable)
       promise.success {
         "Hi! Akka!!"
       }
