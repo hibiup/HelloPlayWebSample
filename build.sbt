@@ -1,15 +1,15 @@
 val playPac4jVersion = "7.0.1"
 val pac4jVersion = "3.6.1"
-val playVersion = "2.7.0"
+val playVersion = "2.7.2"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala).settings(
     name := """HelloPlayWebSample""",
     organization := "com.hibiup",
     version := "1.0-SNAPSHOT",
-    scalaVersion := "2.12.6",
+    scalaVersion := "2.12.8",
     resolvers ++= Seq(
         "Typesafe" at "http://repo.typesafe.com/typesafe/releases/",
-        "shibboleth-releases" at "https://build.shibboleth.net/nexus/content/repositories/releases/"
+        "shibboleth-releases" at "http://build.shibboleth.net/nexus/content/repositories/releases/"
     ),
     libraryDependencies ++= Seq(
         "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
@@ -29,7 +29,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala).settings(
         "org.pac4j" % "pac4j-kerberos" % pac4jVersion,
         "org.pac4j" % "pac4j-couch" % pac4jVersion,
         "org.apache.shiro" % "shiro-core" % "1.4.0",
-        "com.typesafe.play" % "play-cache_2.12" % playVersion,
+        "com.typesafe.play" %% "play" % playVersion,
         "commons-io" % "commons-io" % "2.5",
         "org.apache.commons" % "commons-lang3" % "3.9"
     )
