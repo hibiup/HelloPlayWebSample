@@ -14,8 +14,8 @@ import scala.concurrent.Future
 class WebSocketController @Inject()(cc:ControllerComponents) (implicit system: ActorSystem, mat: Materializer)
         extends AbstractController(cc) {
     /**
-      * 1) WebSocket 是 Play 的 WebSocket 服务管理器，管理所有的客户端连接．通过 accept 接受一个请求,
-      * accept 的类型参数是输入和输出数据类型。传入的参数是 header 的处理函数．
+      * 1) WebSocket 是 Play 的 WebSocket 服务管理器，管理所有的客户端连接．通过 accept 接受一个请求, accept 的类型参数是
+      * 输入和输出数据类型。传入的参数是 header 的处理函数．
       *
       * 如果使用 WebSocket.acceptOrResult 接受请求，则要求返回值必须是 Future[Either[Status, Out] 类型.
       * 如果是 WebSocket.accept 接受请求, 则返回值类型是 Future[Out]
@@ -51,14 +51,18 @@ class ServiceActor(client: ActorRef) extends Actor {
     val logger = Logging(context.system, this)
 
     def receive = {
-        /** 4) 服务Actor将处理后的消息返回给客户端 ActorRef 就完成了双方一个回合的通讯. */
+        /**
+          * 4) 服务Actor将处理后的消息返回给客户端 ActorRef 就完成了双方一个回合的通讯.
+          * */
         case msg: JsValue => {
             logger.debug(s"Receive message: $msg")   // JsValue.\\(key) 返回键值（JsValue）
             client ! Json.parse(s"""
                    |{ "message" : "I received your message: ${(msg \\ "message").toString()} }
                    |""".stripMargin)
 
-            /** 5) (可选) 如果需要, 服务端可以主动关闭连接. */
+            /**
+              * 5) (可选) 如果需要, 服务端可以主动关闭连接.
+              * */
             self ! PoisonPill
         }
     }
