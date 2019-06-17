@@ -53,9 +53,9 @@ class ServiceActor(client: ActorRef) extends Actor {
     def receive = {
         /** 4) 服务Actor将处理后的消息返回给客户端 ActorRef 就完成了双方一个回合的通讯. */
         case msg: JsValue => {
-            logger.debug(s"Receive message: ${(msg \\ "message").toString()}")   // JsValue.\\(key) 返回键值（JsValue）
+            logger.debug(s"Receive message: $msg")   // JsValue.\\(key) 返回键值（JsValue）
             client ! Json.parse(s"""
-                   |{ "message" : "I received your message: ${msg} }
+                   |{ "message" : "I received your message: ${(msg \\ "message").toString()} }
                    |""".stripMargin)
 
             /** 5) (可选) 如果需要, 服务端可以主动关闭连接. */
