@@ -3,7 +3,7 @@ package controllers
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.event.Logging
 import akka.stream.Materializer
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import play.api.libs.json.JsValue
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, WebSocket}
@@ -11,6 +11,7 @@ import play.libs.Json
 
 import scala.concurrent.Future
 
+@Singleton
 class WebSocketController @Inject()(cc:ControllerComponents) (implicit system: ActorSystem, mat: Materializer)
         extends AbstractController(cc) {
     /**

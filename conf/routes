@@ -21,6 +21,9 @@ GET     /logout                     @org.pac4j.play.LogoutController.logout()
 GET     /jwt                        controllers.AuthController.jwtGenerate()
 GET     /jwt/info                   controllers.AuthController.jwt_info
 
+# WebSocket url
+GET     /ws                         controllers.WebSocketController.websocket
+
 # Map static resources from the /public folder to the /assets URL path
 # Must be the last line
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
