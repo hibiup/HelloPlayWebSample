@@ -216,7 +216,7 @@ class SecurityModule(environment: Environment, appConf: Configuration) extends A
          * Http header:
          *   Authorization: Barear eyJhbGciOiJIUzI1NiJ9....
          */
-        new HeaderClient("Authorization", "Barear ", jwtAuthenticator)
+        new HeaderClient("Authorization", "Bearer ", jwtAuthenticator)
     }
 
     /*@Provides
