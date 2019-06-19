@@ -21,7 +21,6 @@ import org.pac4j.oidc.config.OidcConfiguration
 import org.pac4j.oidc.profile.OidcProfile
 import org.pac4j.play.scala.{DefaultSecurityComponents, Pac4jScalaTemplateHelper, SecurityComponents}
 import org.pac4j.saml.client.SAML2Client
-import org.pac4j.saml.config.SAML2Configuration
 import security.{CustomAuthorizer, CustomizedHttpActionAdapter, UsernamePasswordAuthenticator}
 
 /**
@@ -121,6 +120,7 @@ class SecurityModule(environment: Environment, appConf: Configuration) extends A
             directBasicAuthClient,
             formClient,
             headerClient,
+            parameterClient,
             /*
             facebookClient,
             twitterClient,
@@ -202,13 +202,6 @@ class SecurityModule(environment: Environment, appConf: Configuration) extends A
         //   http://www.pac4j.org/docs/authenticators/jwt.html
         val jwtAuthenticator = new JwtAuthenticator(new SecretSignatureConfiguration(appConf.get[String]("pac4j.security.jwt_secret")))
 
-        // ParameterClient 的实现(假设参数名称是 "token" )：
-        /*
-         *   val client = new ParameterClient("token", jwtAuthenticator)
-         *   client.setSupportGetRequest(true)
-         *   client.setSupportPostRequest(false)
-         * */
-
         // HeaderClient 的实现：
         /*
          * 从 jwt token URL 获得 jwt token 后，将它存放在 HTTP Header 中提交到该 URL:
@@ -217,6 +210,19 @@ class SecurityModule(environment: Environment, appConf: Configuration) extends A
          *   Authorization: Barear eyJhbGciOiJIUzI1NiJ9....
          */
         new HeaderClient("Authorization", "Bearer ", jwtAuthenticator)
+    }
+
+    /**
+     * ParameterClient 的实现(假设参数名称是 "token" )：
+     * */
+    @Provides
+    def parameterClient: ParameterClient = {
+        val jwtAuthenticator = new JwtAuthenticator()
+        jwtAuthenticator.addSignatureConfiguration(new SecretSignatureConfiguration(appConf.get[String]("pac4j.security.jwt_secret")))
+        val parameterClient = new ParameterClient("token", jwtAuthenticator)
+        parameterClient.setSupportGetRequest(true)
+        parameterClient.setSupportPostRequest(false)
+        parameterClient
     }
 
     /*@Provides

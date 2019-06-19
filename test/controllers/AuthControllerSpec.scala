@@ -73,14 +73,22 @@ class AuthControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting
             println(token)
 
             /*
-             TODO: 会遇到 No client found for name: ParameterClient 错误，因为我们在 application.conf 中为 /jwt/ 定义了
-                   ParameterClient 机制，需要在 SecurityModule 中实现并加载 ParameterClient
-            */
-            val request = FakeRequest(GET, "/jwt/info?").withHeaders("Authorization" -> s"Bearer $token")
+             * 测试用 header 传递 token
+             */
+            val request = FakeRequest(GET, "/jwt/info").withHeaders("Authorization" -> s"Bearer $token")
             val info = route(app, request).get
             contentType(info) mustBe Some("text/html")
             val content = contentAsString(info).trim
             println(content)
+
+            /*
+             * 测试用 parameter 传递 token
+             */
+            val requestWithParameter = FakeRequest(GET, s"/jwt/info?token=$token")
+            val infoByParameter = route(app, requestWithParameter).get
+            contentType(infoByParameter) mustBe Some("text/html")
+            val contentByParameter = contentAsString(infoByParameter).trim
+            println(contentByParameter)
         }
     }
 }
