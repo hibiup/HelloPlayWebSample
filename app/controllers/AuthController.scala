@@ -9,6 +9,7 @@ import org.pac4j.jwt.profile.JwtGenerator
 import org.pac4j.play.PlayWebContext
 import org.pac4j.play.scala.{Security, SecurityComponents}
 import play.api.Configuration
+import play.api.mvc.{Action, AnyContent}
 
 import scala.collection.JavaConverters.asScalaBuffer
 
@@ -76,7 +77,7 @@ class AuthController @Inject() (val controllerComponents: SecurityComponents,
       * 生成 JWT token 的 URL 本身通过 Form 或 Basic 机制来登录，登陆后返回登录用户的 JWT token。然后可以使用 HeaderClient 或
       * ParameterClient 机制来访问其他 URL. 参见 application.conf 中的配置.
       * */
-    def jwtGenerate() = Secure("FormClient,DirectBasicAuthClient") { implicit request =>
+    def jwtGenerate(): Action[AnyContent] = Secure("FormClient,DirectBasicAuthClient") { implicit request =>
         val generator = new JwtGenerator[CommonProfile]( new SecretSignatureConfiguration(
             appConf.get[String]("pac4j.security.jwt_secret")   // "pac4j.security.jwt_secret" 是一个 256 位长的密钥用于加密 jwt token
         ))
