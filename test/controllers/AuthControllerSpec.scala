@@ -6,7 +6,7 @@ import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
 import org.slf4j.LoggerFactory
 import play.api.mvc.{Action, AnyContent, Result}
-import play.api.test.Helpers.{GET, contentAsString, contentType, route, status}
+import play.api.test.Helpers.{GET}
 import play.api.test.{FakeRequest, Injecting}
 
 import scala.concurrent.{Await, Future}
@@ -58,7 +58,7 @@ class AuthControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting
             Await.result(comp, Duration.Inf)
         }
 
-        "GET by jwt token" in {
+        "GET with JWT token" in {
             import play.api.test._
             import play.api.test.Helpers._
 
