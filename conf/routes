@@ -22,7 +22,7 @@ GET     /jwt                        controllers.AuthController.jwtGenerate()
 GET     /jwt/info                   controllers.AuthController.jwt_info
 
 # WebSocket url
-GET     /ws                         controllers.WebSocketController.ws
+GET     /echo                       controllers.WebSocketController.ws
 
 # Map static resources from the /public folder to the /assets URL path
 # Must be the last line

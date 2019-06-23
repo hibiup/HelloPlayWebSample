@@ -3,9 +3,7 @@ package filters
 import javax.inject.Inject
 import org.pac4j.play.filters.SecurityFilter
 import play.api.http.HttpFilters
-import play.api.libs.ws.{StandaloneWSRequest, WSRequestExecutor, WSRequestFilter}
 import play.api.mvc.EssentialFilter
-
 
 /**
   * 安全配置二：
@@ -29,9 +27,12 @@ class CustomHttpFilters @Inject()(securityFilter: SecurityFilter) extends HttpFi
     override def filters: Seq[EssentialFilter] = Seq(securityFilter)
 }
 
+/*
+import play.api.libs.ws.{StandaloneWSRequest, WSRequestExecutor, WSRequestFilter}
+
 class AuthenticatingFilter extends WSRequestFilter {
     def apply(executor: WSRequestExecutor): WSRequestExecutor = {
         req: StandaloneWSRequest =>
             ???
     }
-}
+}*/

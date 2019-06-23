@@ -51,13 +51,16 @@ class WebSocketController @Inject()(cc:ControllerComponents) (implicit system: A
                   * */
                 Right(ActorFlow.actorRef { client: ActorRef =>
                     /**
-                      * 3) 并将客户 ActorRef 作为参数传给服务 Actor.
+                      * 3) 并将客户 ActorRef 作为参数传给自定义的 Service Actor (4). Service actor 只是简单地提供一个 echo 服务。
                       * */
                     ServiceActor.props(client)
                 })
     /*}*/) } }
 }
 
+/**
+  * 4) 处理消息的 Server 端 Actor
+  * */
 object ServiceActor {
     def props(client: ActorRef) = Props(new ServiceActor(client))
 }
@@ -69,20 +72,22 @@ class ServiceActor(client: ActorRef) extends Actor {
 
     def receive = {
         /**
-          * 4) 服务Actor将处理后的消息返回给客户端 ActorRef 就完成了双方一个回合的通讯.
+          * 4-1) 服务Actor将处理后的消息返回给客户端 ActorRef 就完成了双方一个回合的通讯.
           * */
         case msg: JsValue => {
             logger.debug(s"Receive message: $msg")   // JsValue.\\(key) 返回键值（JsValue）
             val m = (msg \ "message").as[String]
             client ! Json.parse(s"""
-                   |{ "message" : "I received your message: $m" }
+                   |{ "message" : "Server => $m" }
                    |""".stripMargin)
 
             /**
               * 5) (可选) 如果需要, 服务端可以主动关闭连接.
               * */
-            self ! PoisonPill
+            //self ! PoisonPill
         }
+        case _ =>
+            logger.info("Unknown message received")
     }
 
     /** 当客户端关闭连接的时候.服务 Actor 的 postStop 会被调用到. */
