@@ -5,18 +5,22 @@ import akka.event.Logging
 import akka.stream.Materializer
 import javax.inject.{Inject, Singleton}
 import org.pac4j.core.profile.CommonProfile
-import org.pac4j.play.scala.{Security, SecurityComponents}
+import org.pac4j.play.scala.SecurityComponents
 import play.api.Configuration
 import play.api.libs.json.JsValue
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, WebSocket}
 import play.api.libs.json._
+import play.mvc.Security
 
 import scala.concurrent.Future
 
 @Singleton
 class WebSocketController @Inject()(cc:ControllerComponents) (implicit system: ActorSystem, mat: Materializer)
         extends AbstractController(cc)
+/*class WebSocketController @Inject()(val controllerComponents: SecurityComponents,
+                                    val appConf: Configuration)
+                                   (implicit system: ActorSystem, mat: Materializer) extends Security[CommonProfile]*/
 {
     /**
       * 1) WebSocket 是 Play 的 WebSocket 服务管理器，管理所有的客户端连接．通过 accept 接受一个请求, accept 的类型参数是
@@ -36,10 +40,10 @@ class WebSocketController @Inject()(cc:ControllerComponents) (implicit system: A
         /**
           * 1-1) 可以根据请求的 header 决定是否拒绝接受请求. 这里我们用 acceptOrResult，所以要返回 Future[Either]
           * */
-        Future.successful(headers.session.get("Authorization") match {
-            case None =>
-                Left(Forbidden)
-            case Some(jwt: String) =>
+        Future.successful(//headers.session.get("Authorization") match {
+            //case None =>
+            //    Left(Forbidden)
+            //case Some(jwt: String) =>
                 /**
                   * 2) 每个客户连接(client)在 Play 中被保存为一个 ActorRef. 通过 ActorFlow.actorRef 获得它的处理函数.
                   *
@@ -51,7 +55,7 @@ class WebSocketController @Inject()(cc:ControllerComponents) (implicit system: A
                       * */
                     ServiceActor.props(client)
                 })
-    }) } }
+    /*}*/) } }
 }
 
 object ServiceActor {

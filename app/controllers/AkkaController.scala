@@ -2,7 +2,7 @@ package controllers
 
 import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
@@ -15,7 +15,7 @@ class AkkaController @Inject()(cc: ControllerComponents, actorSystem: ActorSyste
   extends AbstractController(cc) {
 
   /** 2 - Akka async) 使用 akka 实现异步 */
-  def akkaAsync() = Action.async {
+  def akkaAsync(): Action[AnyContent] = Action.async {
     getAkkaFutureMessage(1.second).map { msg => Ok(msg) }
   }
 

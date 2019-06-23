@@ -3,7 +3,7 @@ package controllers
 // 参考：http://www.voidcn.com/article/p-mmsxwcuu-bqy.html
 
 import javax.inject.{Inject, Singleton}
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -20,7 +20,7 @@ class AsyncController @Inject()(cc: ControllerComponents)
 
 
   /** 2 - Normal future）使用 Action.async 方法，该方法接受一个 Future 参数来异步执行任务 */
-  def async() = Action.async {
+  def async(): Action[AnyContent] = Action.async {
     val asyncApiResponse: Future[String] = futureJob()
 
     /** 4）将异步任务的结果映射成 Response */
@@ -28,7 +28,7 @@ class AsyncController @Inject()(cc: ControllerComponents)
   }
 
   /** 3）定义异步任务函数，这个函数返回一个 Future，并被 controller 的入口方法调用。 */
-  private def futureJob()= {
+  private def futureJob(): Future[String] = {
     Future {
       "Yes"
     }

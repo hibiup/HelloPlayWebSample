@@ -33,7 +33,7 @@ class AuthController @Inject() (val controllerComponents: SecurityComponents,
       * 第三个参数是 matchers, 用于将该 URL 之下的某个子 URL 排除在认证之外（无需认证）。
       *
       * */
-    def index = Secure(clients = "FormClient,DirectBasicAuthClient", authorizers = "admin_authorizer") { implicit request =>
+    def index: Action[AnyContent] = Secure(clients = "FormClient,DirectBasicAuthClient", authorizers = "admin_authorizer") { implicit request =>
         val webContext = new PlayWebContext(request, controllerComponents.playSessionStore)
         val sessionId = playSessionStore.getOrCreateSessionId(webContext)
         val csrfToken = playSessionStore.get(webContext, Pac4jConstants.CSRF_TOKEN).asInstanceOf[String]
@@ -50,7 +50,7 @@ class AuthController @Inject() (val controllerComponents: SecurityComponents,
       *
       * 更多的安全配置选项参考：https://github.com/pac4j/play-pac4j-scala-demo/blob/master/app/controllers/Application.scala
       * */
-    def admin_info = Action {  implicit request =>
+    def admin_info: Action[AnyContent] = Action {  implicit request =>
         val webContext = new PlayWebContext(request, controllerComponents.playSessionStore)
         val sessionId = playSessionStore.getOrCreateSessionId(webContext)
         val csrfToken = playSessionStore.get(webContext, Pac4jConstants.CSRF_TOKEN).asInstanceOf[String]
@@ -64,7 +64,7 @@ class AuthController @Inject() (val controllerComponents: SecurityComponents,
     /**
       * 登录以上 index 和 admin 都需要通过表格登录(FormClient)
       * */
-    def loginForm = Action { request =>
+    def loginForm: Action[AnyContent] = Action { request =>
         val formClient = config.getClients.findClient("FormClient").asInstanceOf[FormClient]
         Ok(views.html.loginForm.render(formClient.getCallbackUrl))    // formClient.getCallbackUrl 获得 Clients 的第一个参数值
     }
@@ -94,7 +94,7 @@ class AuthController @Inject() (val controllerComponents: SecurityComponents,
       *
       * 下面这个资源受 JWT 认证机制保护，详见 application.conf 中的配置.
       * */
-    def jwt_info = Action {  implicit request =>
+    def jwt_info: Action[AnyContent] = Action {  implicit request =>
         val webContext = new PlayWebContext(request, controllerComponents.playSessionStore)
         val sessionId = playSessionStore.getOrCreateSessionId(webContext)
         val csrfToken = playSessionStore.get(webContext, Pac4jConstants.CSRF_TOKEN).asInstanceOf[String]
