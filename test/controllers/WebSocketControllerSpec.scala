@@ -49,6 +49,8 @@ class WebSocketControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inje
             })
 
             println(Await.result(done, Duration.Inf))
+
+            println("End test")
         }
     }
 }
