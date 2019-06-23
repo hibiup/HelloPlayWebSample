@@ -1,13 +1,12 @@
 package controllers
 
-import java.util.function.Consumer
-
 import akka.Done
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.ws.WebSocketRequest
+import akka.http.scaladsl.model.ws.{TextMessage, WebSocketRequest}
+import akka.stream.scaladsl.Sink
 import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy}
 import com.google.inject.Inject
 import org.scalatestplus.play._
@@ -48,9 +47,7 @@ class WebSocketControllerSpec extends PlaySpec with GuiceOneAppPerTest with Inje
                 ClientActor.props(serverRef)
             })
 
-            println(Await.result(done, Duration.Inf))
-
-            println("End test")
+            Await.result(sys.whenTerminated, Duration.Inf)
         }
     }
 }
@@ -80,38 +77,70 @@ class WebSocketClient @Inject()()(implicit sys: ActorSystem, mat: Materializer) 
     }
 }
 
+import akka.pattern.ask
 
 /**
   * 处理消息的客户端 Actor
   */
 object ClientActor {
-    def props(server: ActorRef) = Props(new ClientActor(server))
+    def props(server: ActorRef)(implicit sys: ActorSystem, mat: Materializer) = Props(new ClientActor(server))
 }
 
-class ClientActor(serverRef: ActorRef) extends Actor {
-    val logger = Logging(context.system, this)
+/**
+  * implicit sys: ActorSystem： 参数仅仅是为了完成测试案例后关闭akka，真实应用中不需要这个参数。
+  * mat: Materializer： 当用 Sink 来处理返回消息时需要用到物化器，如果不使用 Sink 来处理消息，可以不需要这个参数。
+  * */
+class ClientActor(serverRef: ActorRef)(implicit sys: ActorSystem, mat: Materializer) extends Actor {
+    val logger = LoggerFactory.getLogger(this.getClass)
 
     def receive = {
-        case msg: JsValue => {
-            /**
-              * 将来自服务端的消息返回给服务端
-              * */
-            logger.debug(s"Receive message: $msg")   // JsValue.\\(key) 返回键值（JsValue）
-            val m = (msg \ "message").as[String]
-            serverRef ! Json.parse(s"""
-                                   |{ "message" : "Client => $m" }
-                                   |""".stripMargin)
+        /**
+          * 将来自服务端的消息返回给服务端
+          * */
+        case TextMessage.Strict(msg) => {
+            logger.debug(s"Receive message: $msg")
+            serverRef ! TextMessage(s"""{ "message" : "Client => $msg" }""".stripMargin)
         }
+        /**
+          * 或使用 Sink 处理 Message. 需要隐式物化器
+          * */
+        /*case msg: TextMessage => {
+            logger.debug(s"Receive message: $msg")
+            msg.textStream.runWith(Sink.foreach(m =>
+                serverRef ! TextMessage(s"""{ "message" : "Client => $m" }""".stripMargin)))
+        }*/
         case _ =>
             logger.info("Unknown message received")
     }
 
     override def preStart() = {
-        serverRef ! """{"message":"Hello!"}"""
+        serverRef ! TextMessage(s"""{ "message" : "Hello!" }""".stripMargin)
     }
 
     /** 当客户端关闭连接的时候.服务 Actor 的 postStop 会被调用到. */
     override def postStop() = {
         logger.info("Socket is closed") // someResource.close()
+        sys.terminate()   // 关闭 Akka system
+    }
+
+    /** */
+    override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
+        logger.error(reason.getMessage, reason)
+        super.preRestart(reason, message)
+    }
+
+    override def postRestart(reason: Throwable): Unit = {
+        logger.error(reason.getMessage, reason)
+        super.postRestart(reason)
+    }
+
+    override def aroundPreRestart(reason: Throwable, message: Option[Any]): Unit = {
+        logger.error(reason.getMessage, reason)
+        super.aroundPreRestart(reason, message)
+    }
+
+    override def aroundPostRestart(reason: Throwable): Unit = {
+        logger.error(reason.getMessage, reason)
+        super.aroundPostRestart(reason)
     }
 }
