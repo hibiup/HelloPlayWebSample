@@ -1,20 +1,13 @@
 package controllers
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import akka.event.Logging
-import akka.http.scaladsl.model.ws.TextMessage
 import akka.stream.Materializer
-import akka.stream.scaladsl.Sink
 import javax.inject.{Inject, Singleton}
-import org.pac4j.core.profile.CommonProfile
-import org.pac4j.play.scala.SecurityComponents
 import org.slf4j.LoggerFactory
-import play.api.Configuration
 import play.api.libs.json.JsValue
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, WebSocket}
 import play.api.libs.json._
-import play.mvc.Security
 
 import scala.concurrent.Future
 
@@ -80,7 +73,7 @@ class ServiceActor(client: ActorRef) extends Actor {
         case msg: JsValue => {
             logger.debug(s"Receive message: $msg")   // JsValue.\\(key) 返回键值（JsValue）
             val m = (msg \ "message").as[String]
-            client ! Json.parse(s"""{ "message" : "Server => $m" }|""".stripMargin)
+            client ! Json.parse(s"""{ "message" : "Server => $m" }""".stripMargin)
 
             /**
               * 5) (可选) 如果需要, 服务端可以主动关闭连接.
@@ -94,26 +87,5 @@ class ServiceActor(client: ActorRef) extends Actor {
     /** 当客户端关闭连接的时候.服务 Actor 的 postStop 会被调用到. */
     override def postStop() = {
         logger.info("Socket is closed") // someResource.close()
-    }
-
-    /** */
-    override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
-        logger.error(reason.getMessage, reason)
-        super.preRestart(reason, message)
-    }
-
-    override def postRestart(reason: Throwable): Unit = {
-        logger.error(reason.getMessage, reason)
-        super.postRestart(reason)
-    }
-
-    override def aroundPreRestart(reason: Throwable, message: Option[Any]): Unit = {
-        logger.error(reason.getMessage, reason)
-        super.aroundPreRestart(reason, message)
-    }
-
-    override def aroundPostRestart(reason: Throwable): Unit = {
-        logger.error(reason.getMessage, reason)
-        super.aroundPostRestart(reason)
     }
 }
