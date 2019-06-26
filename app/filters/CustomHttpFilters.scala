@@ -27,12 +27,3 @@ class CustomHttpFilters @Inject()(securityFilter: SecurityFilter) extends HttpFi
     override def filters: Seq[EssentialFilter] = Seq(securityFilter)
 }
 
-/*
-import play.api.libs.ws.{StandaloneWSRequest, WSRequestExecutor, WSRequestFilter}
-
-class AuthenticatingFilter extends WSRequestFilter {
-    def apply(executor: WSRequestExecutor): WSRequestExecutor = {
-        req: StandaloneWSRequest =>
-            ???
-    }
-}*/
