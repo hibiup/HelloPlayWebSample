@@ -49,6 +49,41 @@ $ sbt run
 
 或在 idea 中新建一个 debug configuration，选取 Play 2 App模板，然后执行。
 
+# 发布项目
+
+首先对于即将投入生产环境的应用，play 都会要求一个 secret key，值是任意随机字符串，确认其配置在 application.conf 文件中:
+
+~~~config
+play.http.secret.key="Xoxoxoxox"
+~~~
+
+##　打包项目：
+
+~~~sbtshell
+# sbt dist
+~~~
+
+以上命令会在 target\universal 目录下生成 zip 发布包.
+
+## 在目标机上解压发布包
+
+解压后在 bin 目录下有两个可执行脚本，修改 `windows batch` 脚本中的 `APP_CLASSPATH` 环境变量为：
+
+~~~bash
+set "APP_CLASSPATH=%APP_LIB_DIR%\..\conf\;%APP_LIB_DIR%\*"
+set "APP_MAIN_CLASS=play.core.server.ProdServerStart"
+~~~
+
+否则 `APP_CLASSPATH` 的值会因为太长而无法被载入。
+
+## 执行
+
+执行的时候需要指定 `-Dconfig.file` 参数
+
+```shell
+# <project-xyz-version>/bin/xxx -Dconfig.file=<project-xyz-version>/conf/application.conf
+```
+
 # 项目开发
 
 Idea Ultimate 版本支持 Play framework，社区版不支持。
