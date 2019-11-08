@@ -81,7 +81,7 @@ set "APP_MAIN_CLASS=play.core.server.ProdServerStart"
 执行的时候需要指定 `-Dconfig.file` 参数
 
 ```shell
-# <project-xyz-version>/bin/xxx -Dconfig.file=<project-xyz-version>/conf/application.conf
+# <project-version>/bin/xxx -Dconfig.file=<project-version>/conf/application.conf
 ```
 
 # 项目开发
