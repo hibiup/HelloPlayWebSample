@@ -67,7 +67,9 @@ play.http.secret.key="Xoxoxoxox"
 
 ## 在目标机上解压发布包
 
-解压后在 bin 目录下有两个可执行脚本，修改 `windows batch` 脚本中的 `APP_CLASSPATH` 环境变量为：
+解压后在 bin 目录下有两个可执行脚本，打开脚本检查是否正确生成了 `app_mainclass=<project>-<version>-launcher.jar` (windows 下为 APP_MAIN_CLASS)如果生成了则无需修改，可立即执行。
+
+但是如果 sbt 配置文件缺少某些参数（比如group, name 或 version），可能导致无法生成launcher 文件，那么变量可能直接指向`play.core.server.ProdServerStart`，并且有可能需要将 `windows batch` 脚本中的 `APP_CLASSPATH` 环境变量改为：
 
 ~~~bash
 set "APP_CLASSPATH=%APP_LIB_DIR%\..\conf\;%APP_LIB_DIR%\*"
