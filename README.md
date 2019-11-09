@@ -78,11 +78,18 @@ set "APP_MAIN_CLASS=play.core.server.ProdServerStart"
 
 ## 执行
 
-执行的时候需要指定 `-Dconfig.file` 参数
+命令行执行的时候需要指定 `-Dconfig.file` 参数
 
 ```shell
 # <project-version>/bin/xxx -Dconfig.file=<project-version>/conf/application.conf
 ```
+
+IDE 中执行新建一个 Application, 参数如下：
+
+Main class: play.core.server.ProdServerStart
+Work directory: （子）项目根目录
+Use classpath of module: 指向（子）项目
+
 
 # 项目开发
 
